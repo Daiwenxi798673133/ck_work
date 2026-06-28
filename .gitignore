@@ -45,3 +45,6 @@ qa-evidence/
 *.tmp
 *.swp
 *.bak
+
+# Playwright MCP artifacts
+.playwright-mcp/

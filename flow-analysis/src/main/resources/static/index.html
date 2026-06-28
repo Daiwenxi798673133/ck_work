@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>区域人口流动分析看板 · ClickHouse Flow Analysis</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar__brand">
+        <div class="topbar__mark" aria-hidden="true"></div>
+        <div class="topbar__titles">
+          <h1 class="topbar__title">区域人口流动分析看板</h1>
+          <p class="topbar__sub">流入 · 流出 · 留存 · OD 流向 · 人群画像 — 基于 ClickHouse 离线分析</p>
+        </div>
+      </div>
+      <div class="topbar__legend" aria-hidden="true">
+        <span class="lg lg--inflow">流入</span>
+        <span class="lg lg--outflow">流出</span>
+        <span class="lg lg--retained">留存</span>
+      </div>
+    </header>
+
+    <section class="controls" aria-label="查询控件">
+      <div class="field">
+        <label class="field__label" for="region">区域</label>
+        <select class="field__input" id="region" aria-label="区域"></select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="granularity">时间粒度</label>
+        <select class="field__input" id="granularity" aria-label="时间粒度">
+          <option value="hour">小时（hour）</option>
+          <option value="day">天（day）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="start">起始时间</label>
+        <input class="field__input" type="datetime-local" id="start" step="1" value="2026-06-01T00:00:00" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="end">结束时间</label>
+        <input class="field__input" type="datetime-local" id="end" step="1" value="2026-06-02T00:00:00" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="direction">画像方向</label>
+        <select class="field__input" id="direction" aria-label="画像方向">
+          <option value="in">流入（in）</option>
+          <option value="out">流出（out）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="dimension">画像维度</label>
+        <select class="field__input" id="dimension" aria-label="画像维度">
+          <option value="gender">性别（gender）</option>
+          <option value="age_group">年龄段（age_group）</option>
+          <option value="is_resident">常住（is_resident）</option>
+        </select>
+      </div>
+      <div class="controls__actions">
+        <button class="btn btn--primary" id="btn-query" type="button">查询</button>
+        <button class="btn btn--ghost" id="btn-init" type="button">初始化数据</button>
+      </div>
+    </section>
+
+    <section id="overview-cards" class="overview" aria-label="概览指标">
+      <div class="metric metric--population">
+        <div class="metric__label">在网人数<span class="metric__hint">最新窗口</span></div>
+        <div class="metric__value" data-metric="population">—</div>
+        <div class="metric__foot">population = retained + inflow</div>
+      </div>
+      <div class="metric metric--inflow">
+        <div class="metric__label">累计流入<span class="metric__hint">区间合计</span></div>
+        <div class="metric__value" data-metric="inflow">—</div>
+        <div class="metric__foot">Σ inflow</div>
+      </div>
+      <div class="metric metric--outflow">
+        <div class="metric__label">累计流出<span class="metric__hint">区间合计</span></div>
+        <div class="metric__value" data-metric="outflow">—</div>
+        <div class="metric__foot">Σ outflow</div>
+      </div>
+      <div class="metric metric--net">
+        <div class="metric__label">净流入<span class="metric__hint">流入−流出</span></div>
+        <div class="metric__value" data-metric="net">—</div>
+        <div class="metric__foot">Σ inflow − Σ outflow</div>
+      </div>
+    </section>
+
+    <section class="panel panel--wide">
+      <header class="panel__head">
+        <h2 class="panel__title">流动趋势</h2>
+        <p class="panel__sub">所选区域随时间的 population / inflow / outflow / retained</p>
+      </header>
+      <div id="chart-trend" class="chart chart--tall"></div>
+    </section>
+
+    <div class="grid grid--od">
+      <section class="panel">
+        <header class="panel__head">
+          <h2 class="panel__title">OD 流向热力</h2>
+          <p class="panel__sub">区域间转移流量（行=起点，列=终点）</p>
+        </header>
+        <div id="chart-od" class="chart"></div>
+      </section>
+      <section class="panel">
+        <header class="panel__head">
+          <h2 class="panel__title">OD 流向矩阵</h2>
+          <p class="panel__sub">含对角线（留存）的 N×N 流量表</p>
+        </header>
+        <div id="od-matrix" class="matrix"></div>
+      </section>
+    </div>
+
+    <section class="panel panel--wide">
+      <header class="panel__head">
+        <h2 class="panel__title">人群画像分布</h2>
+        <p class="panel__sub">当前方向下三维度构成（性别 / 年龄段 / 常住）</p>
+      </header>
+      <div class="grid grid--portrait">
+        <div class="subpanel">
+          <h3 class="subpanel__title">性别 gender</h3>
+          <div id="chart-portrait-gender" class="chart"></div>
+        </div>
+        <div class="subpanel">
+          <h3 class="subpanel__title">年龄段 age_group</h3>
+          <div id="chart-portrait-age" class="chart"></div>
+        </div>
+        <div class="subpanel">
+          <h3 class="subpanel__title">常住 is_resident</h3>
+          <div id="chart-portrait-resident" class="chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <details class="caliber">
+      <summary class="caliber__summary">
+        <span class="caliber__icon" aria-hidden="true">i</span>
+        口径说明（指标定义与计算口径）
+      </summary>
+      <div class="caliber__body">
+        <dl class="caliber__list">
+          <div class="caliber__item">
+            <dt>流入 inflow</dt>
+            <dd>相邻窗口间，从其他区域进入本区域的人次（from ≠ R 且 to = R）。</dd>
+          </div>
+          <div class="caliber__item">
+            <dt>流出 outflow</dt>
+            <dd>相邻窗口间，从本区域离开到其他区域的人次（from = R 且 to ≠ R）。</dd>
+          </div>
+          <div class="caliber__item">
+            <dt>留存 retained</dt>
+            <dd>相邻窗口仍停留在本区域的人次（from = R 且 to = R），即 OD 矩阵的对角线。</dd>
+          </div>
+          <div class="caliber__item">
+            <dt>位置口径 loc</dt>
+            <dd>每个用户在一个时间窗口的归属区域 = 该<strong>窗口末切片的主导区域</strong>（按时间 argMax 取最后出现的区域）。</dd>
+          </div>
+          <div class="caliber__item">
+            <dt>transition-only（仅转移）</dt>
+            <dd>仅统计相邻两窗口<strong>都在网（有定位）</strong>的用户的区域转移；<strong>离线</strong>（无定位）的切片不产生记录，<strong>不计入</strong>流入 / 流出 / 留存。</dd>
+          </div>
+          <div class="caliber__item">
+            <dt>在网人数 population</dt>
+            <dd><strong>population = retained + inflow</strong>（窗口内总在网人数 = 留存 + 流入）。</dd>
+          </div>
+          <div class="caliber__item">
+            <dt>时间口径</dt>
+            <dd>时区 Asia/Shanghai；窗口按粒度对齐（hour=整点 / day=整日）；查询区间为左闭右开 [start, end)。</dd>
+          </div>
+        </dl>
+      </div>
+    </details>
+
+    <footer class="footer">
+      <span>ClickHouse + Spring Boot + ECharts</span>
+      <span class="footer__dot">·</span>
+      <span>静态资源由后端同源托管 :8080</span>
+    </footer>
+  </div>
+
+  <div id="loading" class="loading" hidden>
+    <div class="loading__spinner" aria-hidden="true"></div>
+    <span class="loading__text">加载中…</span>
+  </div>
+  <div id="toast" class="toast-box" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="lib/echarts.min.js"></script>
+  <script src="api.js"></script>
+  <script src="charts/trend.js"></script>
+  <script src="charts/od.js"></script>
+  <script src="charts/portrait.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
