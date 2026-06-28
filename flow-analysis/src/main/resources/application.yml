@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:clickhouse://localhost:8123/flow?use_time_zone=Asia/Shanghai
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+    username: default
+    password:
+
+app:
+  datagen:
+    auto-init: false
+    seed: 20260601
+    user-count: 10000
+    start: "2026-05-31T00:00:00"
+    report-start: "2026-06-01T00:00:00"
+    end: "2026-06-07T00:00:00"
+    stay-prob: 0.85
+    present-prob: 0.9
+    batch-size: 10000
