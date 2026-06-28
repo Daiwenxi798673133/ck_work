@@ -1,0 +1,13 @@
+TRUNCATE TABLE IF EXISTS flow.dim_region;
+TRUNCATE TABLE IF EXISTS flow.dim_cell;
+INSERT INTO flow.dim_region (region_id, region_name, city_code, lac, cell_count) VALUES ('310000_6254', '陆家嘴', '310000', '6254', 3);
+INSERT INTO flow.dim_region (region_id, region_name, city_code, lac, cell_count) VALUES ('310000_6234', '人民广场', '310000', '6234', 2);
+INSERT INTO flow.dim_region (region_id, region_name, city_code, lac, cell_count) VALUES ('310000_6200', '徐家汇', '310000', '6200', 3);
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6254_140854179', '310000_6254', '6254', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6254_140854180', '310000_6254', '6254', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6254_140854181', '310000_6254', '6254', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6234_140854182', '310000_6234', '6234', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6234_140854183', '310000_6234', '6234', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6200_140854184', '310000_6200', '6200', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6200_140854185', '310000_6200', '6200', '310000');
+INSERT INTO flow.dim_cell (cell_id, region_id, lac, city_code) VALUES ('310000_6200_140854186', '310000_6200', '6200', '310000');
