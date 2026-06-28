@@ -1,0 +1,47 @@
+# Maven / Java 构建产物
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# 日志
+*.log
+logs/
+
+# Spring Boot
+HELP.md
+
+# 本地配置
+*.local
+*.env
+.env
+.env.local
+
+# 证据目录（本地 QA，不进库）
+qa-evidence/
+
+# Sisyphus 工作目录
+.sisyphus/
+
+# 其他临时文件
+*.tmp
+*.swp
+*.bak
